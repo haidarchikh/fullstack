@@ -2,37 +2,35 @@ package se.kry.codetest;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-
 public class MainVerticle extends AbstractVerticle {
 
-  private HashMap<String, String> services = new HashMap<>();
-  //TODO use this
+  private static final int PORT = 8080;
+
   private DBConnector connector;
-  private BackgroundPoller poller = new BackgroundPoller();
+  private final BackgroundPoller poller = new BackgroundPoller();
 
   @Override
   public void start(Future<Void> startFuture) {
     connector = new DBConnector(vertx);
+    connector.insertService(new Service("kry", "https://www.kry.se"));
+
     Router router = Router.router(vertx);
     router.route().handler(BodyHandler.create());
-    services.put("https://www.kry.se", "UNKNOWN");
-    vertx.setPeriodic(1000 * 60, timerId -> poller.pollServices(services));
+
+    vertx.setPeriodic(1000 * 60, timerId -> poller.pollServices(connector, WebClient.create(vertx)));
+
     setRoutes(router);
     vertx
         .createHttpServer()
         .requestHandler(router)
-        .listen(8080, result -> {
+        .listen(MainVerticle.PORT, result -> {
           if (result.succeeded()) {
-            System.out.println("KRY code test service started");
+            System.out.println("KRY code test service started: " + MainVerticle.PORT);
             startFuture.complete();
           } else {
             startFuture.fail(result.cause());
@@ -40,27 +38,25 @@ public class MainVerticle extends AbstractVerticle {
         });
   }
 
-  private void setRoutes(Router router){
+  private void setRoutes(Router router) {
     router.route("/*").handler(StaticHandler.create());
+
     router.get("/service").handler(req -> {
-      List<JsonObject> jsonServices = services
-          .entrySet()
-          .stream()
-          .map(service ->
-              new JsonObject()
-                  .put("name", service.getKey())
-                  .put("status", service.getValue()))
-          .collect(Collectors.toList());
-      req.response()
-          .putHeader("content-type", "application/json")
-          .end(new JsonArray(jsonServices).encode());
+
+      connector.getAllServices().setHandler(result -> {
+        if (result.failed()) {
+          req.response().setStatusCode(500).end();
+        } else {
+          req.response().setStatusCode(200).putHeader("content-type", "application/json").end(result.result().toString());
+        }
+      });
     });
+
     router.post("/service").handler(req -> {
-      JsonObject jsonBody = req.getBodyAsJson();
-      services.put(jsonBody.getString("url"), "UNKNOWN");
-      req.response()
-          .putHeader("content-type", "text/plain")
-          .end("OK");
+
+      connector.insertService(new Service(req.getBodyAsJson()));
+
+      req.response().putHeader("content-type", "text/plain").end("OK");
     });
   }
 

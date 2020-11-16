@@ -8,14 +8,25 @@ public class DBMigration {
   public static void main(String[] args) {
     Vertx vertx = Vertx.vertx();
     DBConnector connector = new DBConnector(vertx);
-    connector.query("CREATE TABLE IF NOT EXISTS service (url VARCHAR(128) NOT NULL)").setHandler(done -> {
-      if(done.succeeded()){
-        System.out.println("completed db migrations");
-      } else {
-        done.cause().printStackTrace();
-      }
-      vertx.close(shutdown -> {
-        System.exit(0);
+
+    // TODO: VARCHAR(max)
+    connector.query("DROP TABLE IF EXISTS service").setHandler(res -> {
+      connector.query("CREATE TABLE service (" +
+              "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+              "name VARCHAR(200) NOT NULL, " +
+              "url VARCHAR(200) NOT NULL, " +
+              "status VARCHAR(20) DEFAULT `UNKNOWN`, " +
+//              "lastPoll DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP, " +
+              "createdAt DATETIME DEFAULT CURRENT_TIMESTAMP " +
+              ");").setHandler(done -> {
+
+        if (done.succeeded()) {
+          System.out.println("completed db migrations");
+        } else {
+          done.cause().printStackTrace();
+        }
+
+        vertx.close(shutdown -> { System.exit(0); });
       });
     });
   }
