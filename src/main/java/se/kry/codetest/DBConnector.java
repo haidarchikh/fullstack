@@ -60,11 +60,37 @@ public class DBConnector {
   }
 
   public void updateServiceStatus(Service service) {
-    query("UPDATE SERVICE SET status = ? WHERE id = ?", new JsonArray().add(service.getStatus()).add(service.getId()));
+    query("UPDATE SERVICE SET status = ?, lastPoll = datetime('now') WHERE id = ?", new JsonArray().add(service.getStatus()).add(service.getId()));
   }
 
-  public void insertService(Service service) {
-    query("INSERT INTO service (url) VALUES (?)", new JsonArray().add(service.getUrl()));
+  public Future<String> insertService(Service service) {
+    Future<String> insertService = Future.future();
+
+    query("INSERT INTO service (name, url) VALUES (?, ?)", new JsonArray().add(service.getName()).add(service.getUrl())).setHandler(result -> {
+      if (result.failed()){
+        insertService.fail(result.cause());
+      } else {
+        insertService.complete("CREATED");
+      }
+    });
+
+    return insertService;
+  }
+
+  public Future<String> cleanupDB() {
+    Future<String> cleanupDB = Future.future();
+
+    // TODO: set to invalid
+    query("DELETE FROM service").setHandler(result -> {
+      if (result.failed()){
+        // FIXME: this will fail if migration is not run
+        cleanupDB.fail(result.cause());
+      } else {
+        cleanupDB.complete("DONE");
+      }
+    });
+
+    return cleanupDB;
   }
 
 }

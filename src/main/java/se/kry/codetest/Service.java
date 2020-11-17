@@ -1,27 +1,30 @@
 package se.kry.codetest;
 import io.vertx.core.json.JsonObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Service {
+    private static final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     private Integer id;
     private String name;
     // TODO: change this to some sort or url obj
     private String url;
     private String status;
-    private Date createdAt;
-    private Date lastPoll;
 
-    // FIXME: lastPoll to null
-    // FIXME: move default values to setters
+    // TODO: date object for createdAt and lastPoll
+    private String createdAt;
+    private String lastPoll;
 
     public Service (JsonObject row) {
-        this (row.getInteger("id"), row.getString("name"), row.getString("url"), row.getString("status"), new Date(row.getString("createdAt")), new Date(row.getString("lastPoll")));
+        this (row.getInteger("id"), row.getString("name"), row.getString("url"), row.getString("status"), row.getString("createdAt"), row.getString("lastPoll"));
     }
 
     public Service (String name, String url) { this(null, name, url, null, null, null);  }
 
-    public Service (Integer id, String name, String url, String status, Date createdAt, Date lastPoll) {
+    public Service (Integer id, String name, String url, String status, String createdAt, String lastPoll) {
         this.setId(id);
         this.setName(name);
         this.setUrl(url);
@@ -44,7 +47,6 @@ public class Service {
 
     public void setName(String name) {
         // TODO: throw error if name is empty
-//        if (name == null || name.isEmpty()) { throw new Exception("Service name is empty"); }
         this.name = name;
     }
 
@@ -65,19 +67,19 @@ public class Service {
         this.status = status;
     }
 
-    public Date getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 
-    public Date getLastPoll() {
+    public String getLastPoll() {
         return lastPoll;
     }
 
-    public void setLastPoll(Date lastPoll) {
+    public void setLastPoll(String lastPoll) {
         this.lastPoll = lastPoll;
     }
 

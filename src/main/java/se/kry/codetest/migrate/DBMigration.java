@@ -14,12 +14,18 @@ public class DBMigration {
       connector.query("CREATE TABLE service (" +
               "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
               "name VARCHAR(200) NOT NULL, " +
-              "url VARCHAR(200) NOT NULL, " +
-              "status VARCHAR(20) DEFAULT `UNKNOWN`, " +
-//              "lastPoll DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP, " +
+              "url VARCHAR(200) NOT NULL UNIQUE, " +
+              "status VARCHAR(20) DEFAULT 'UNKNOWN', " +
+              "lastPoll DEFAULT NULL, " +
               "createdAt DATETIME DEFAULT CURRENT_TIMESTAMP " +
-              ");").setHandler(done -> {
+              ")").setHandler(done -> {
 
+                // TODO: run migration each start or allow cleaning the db?
+//                connector.query("CREATE TRIGGER disable_service_delete\n" +
+//                "BEFORE DELETE ON service\n" +
+//                "BEGIN\n" +
+//                "    SELECT RAISE(ABORT, 'There's no way to delete individual services');\n" +
+//                "END");
         if (done.succeeded()) {
           System.out.println("completed db migrations");
         } else {

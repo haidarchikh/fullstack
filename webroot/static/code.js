@@ -1,24 +1,29 @@
-const listContainer = document.querySelector('#service-list');
-let servicesRequest = new Request('/service');
-fetch(servicesRequest)
-.then(function(response) { return response.json(); })
-.then(function(serviceList) {
-  serviceList.forEach(service => {
-    var li = document.createElement("li");
-    li.appendChild(document.createTextNode(service.name + ': ' + service.status));
-    listContainer.appendChild(li);
-  });
-});
+fetch('/service')
+    .then(response => response.json())
+    .then(serviceList => {
+        const listContainer = document.querySelector('#service-list');
 
-const saveButton = document.querySelector('#post-service');
-saveButton.onclick = evt => {
-    let urlName = document.querySelector('#url-name').value;
+        serviceList.forEach(service => {
+            const li = document.createElement("li");
+            li.appendChild(document.createTextNode(`${service.name}: ${service.status}: ${service.lastPoll}`));
+            listContainer.appendChild(li);
+        });
+    });
+
+
+document.querySelector('#post-service').onclick = () =>
     fetch('/service', {
-    method: 'post',
-    headers: {
-    'Accept': 'application/json, text/plain, */*',
-    'Content-Type': 'application/json'
-    },
-  body: JSON.stringify({url:urlName})
-}).then(res=> location.reload());
-}
+        method: 'post',
+        headers: { 'Accept': 'application/json, text/plain, */*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: document.querySelector('#name').value,
+            url: document.querySelector('#url').value
+        })
+    }).then(() => location.reload());
+
+// TODO: populate a table instead of reloading the whole page
+setInterval(() => {
+    if (document.querySelector('#name').value || document.querySelector('#url').value) { return; }
+
+    location.reload();
+}, 1000 * 10)

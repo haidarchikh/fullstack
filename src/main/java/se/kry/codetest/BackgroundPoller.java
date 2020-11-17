@@ -8,13 +8,13 @@ public class BackgroundPoller {
 
     connector.getAllServices().setHandler(result -> {
 
-      if (result.failed()) { System.out.println("poll error"); return; }
+      if (result.failed()) { System.out.println(result.cause().toString()); return; }
 
-      result.result().forEach(service ->
-        webClient.get(service.getUrl()).send(res -> {
-          service.setStatus(res.failed() || res.result().statusCode() != 200 ? "FAIL": "OK");
-          connector.updateServiceStatus(service);
-        }));
+        result.result().forEach(service ->
+          webClient.getAbs(service.getUrl()).send(res -> {
+              service.setStatus(res.failed() || res.result().statusCode() != 200 ? "FAIL": "OK");
+              connector.updateServiceStatus(service);
+          }));
     });
   }
 }
